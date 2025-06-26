@@ -1,93 +1,3 @@
-=begin pod
-
-=head1 NAME
-
-Noise::Simplex – fast 2-D & 3-D Simplex-noise generator for Raku
-
-=head1 SYNOPSIS
-
-```raku
-use Noise::Simplex;
-
-# 2-D field
-my $s   = Simplex.new(seed => 42);
-my &n2d = $s.create-noise2d;
-say &n2d(12.3, 9.8);        # → value ≈ [-1,1]
-
-# 3-D slice (z = 0.5)
-my &n3d = $s.create-noise3d;
-say &n3d(1.0, 2.0, 0.5);
-```
-
-=head1 DESCRIPTION
-
-B<Simplex noise> (Gustavson/Perlin) is a coherent, rotation-invariant
-alternative to classic Perlin noise.  This module delivers pure-Raku
-2-D and 3-D fields seeded by a 64-bit Mersenne-Twister PRNG.
-
-=head1 CLASS
-
-=head2 C<Simplex>
-
-=over 4
-
-=item C\<new(:\$seed!)>
-
-Create a generator initialised with an integer seed.  Different seeds
-produce independent noise fields.
-
-=item C<create-noise2d> → Callable
-
-Returns a two-argument callable C\<sub (\$x, \$y --> Numeric)> that
-evaluates the 2-D field.
-
-=item C<create-noise3d> → Callable
-
-Returns a three-argument callable C\<sub (\$x, \$y, \$z --> Numeric)> that
-evaluates the 3-D field.
-
-=back
-
-=head1 RANGE
-
-Outputs are centred on zero and scaled to roughly C<\[-1,1]> using
-factors 70 (2-D) and 32 (3-D).
-
-=head1 EXAMPLE – quick greyscale PNG
-
-```raku
-use lib 'lib';
-use Noise::Simplex;
-use Image::PNG::Portable;
-
-my $width = 512;
-my $height = 512;
-my $simplex = Simplex.new(seed => 12345);
-my &noise2d = $simplex.create-noise2d;
-
-my $img = Image::PNG::Portable.new: :$width, :$height, :alpha(False);
-
-my @pixels;
-for 0 ..^ $height -> $y {
-    for 0 ..^ $width -> $x {
-        my $n = noise2d($x / 64, $y / 64);
-        my $val = ($n + 1) * 127.5;
-        $img.set: $x, $y, $val.round, $val.round, $val.round;  # R, G, B grayscale
-    }
-}
-
-$img.write: "img/2d.png";
-```
-
-=head1 AUTHOR
-
-Matt Doughty
-
-=head1 LICENSE
-
-Artistic 2.0
-
-=end pod
 unit module Noise::Simplex;
 
 use Math::Random::MT;
@@ -144,43 +54,38 @@ class Simplex is export {
 	}
 
 	method !perm-grad2x {
-		if @!perm-grad2x.elems == 0 {
-			my @result = @!perm.map( -> $v { @grad2[ ($v % 12) * 2 ] });
-			@!perm-grad2x = @result;
-		}
-		return @!perm-grad2x;
+		@!perm-grad2x ?? @!perm-grad2x 
+			!! (@!perm-grad2x = @!perm.map( -> $v { 
+				@grad2[ ($v % 12) * 2 ] }
+			));
 	}
 
 	method !perm-grad2y {
-		if @!perm-grad2y.elems == 0 {
-			my @result = @!perm.map( -> $v { @grad2[ ($v % 12) * 2 + 1 ] });
-			@!perm-grad2y = @result;
-		}
-		return @!perm-grad2y;
+		@!perm-grad2y ?? @!perm-grad2y 
+			!! (@!perm-grad2y = @!perm.map( -> $v { 
+				@grad2[ ($v % 12) * 2 + 1 ] }
+			));
 	}
 
 	method !perm-grad3x {
-		if @!perm-grad3x.elems == 0 {
-			my @result = @!perm.map( -> $v { @grad3[ ($v % 12) * 3 ] });
-			@!perm-grad3x = @result;
-		}
-		return @!perm-grad3x;
+		@!perm-grad3x ?? @!perm-grad3x 
+			!! (@!perm-grad3x = @!perm.map( -> $v { 
+				@grad3[ ($v % 12) * 3 ] }
+			));
 	}
 
 	method !perm-grad3y {
-		if @!perm-grad3y.elems == 0 {
-			my @result = @!perm.map( -> $v { @grad3[ ($v % 12) * 3 + 1 ] });
-			@!perm-grad3y = @result;
-		}
-		return @!perm-grad3y;
+		@!perm-grad3y ?? @!perm-grad3y 
+			!! (@!perm-grad3y = @!perm.map( -> $v { 
+				@grad3[ ($v % 12) * 3 + 1 ] }
+			));
 	}
 
 	method !perm-grad3z {
-		if @!perm-grad3z.elems == 0 {
-			my @result = @!perm.map( -> $v { @grad3[ ($v % 12) * 3 + 2 ] });
-			@!perm-grad3z = @result;
-		}
-		return @!perm-grad3z;
+		@!perm-grad3z ?? @!perm-grad3z 
+			!! (@!perm-grad3z = @!perm.map( -> $v { 
+				@grad3[ ($v % 12) * 3 + 2 ] }
+			));
 	}
 
 	method create-noise2d {
@@ -265,25 +170,13 @@ class Simplex is export {
 			my $y0 = $y - $Y0;
 			my $z0 = $z - $Z0;
 
-			my ($i1, $j1, $k1, $i2, $j2, $k2);
-
-			if $x0 >= $y0 {
-				if $y0 >= $z0      { 
-					($i1,$j1,$k1, $i2,$j2,$k2) = (1,0,0, 1,1,0);
-				} elsif $x0 >= $z0 { 
-					($i1,$j1,$k1, $i2,$j2,$k2) = (1,0,0, 1,0,1);
-				} else             { 
-					($i1,$j1,$k1, $i2,$j2,$k2) = (0,0,1, 1,0,1);
-				}
-			} else {
-				if $y0 < $z0      { 
-					($i1,$j1,$k1, $i2,$j2,$k2) = (0,0,1, 0,1,1);
-				} elsif $x0 < $z0 { 
-					($i1,$j1,$k1, $i2,$j2,$k2) = (0,1,0, 0,1,1);
-				} else            { 
-					($i1,$j1,$k1, $i2,$j2,$k2) = (0,1,0, 1,1,0);
-				}
-			}
+			my ($i1, $j1, $k1, $i2, $j2, $k2) = $x0 >= $y0 ?? 
+				($y0 >= $z0 ??             (1, 0, 0, 1, 1, 0)
+					!! ($x0 >= $z0 ??  (1, 0, 0, 1, 0, 1)
+					!!                 (0, 0, 1, 1, 0, 1)))
+				!! ($y0 < $z0 ??           (0, 0, 1, 0, 1, 1)
+					!! ($x0 < $z0 ??   (0, 1, 0, 0, 1, 1)
+					!!                 (0, 1, 0, 1, 1, 0)));
 
 			my $x1 = $x0 - $i1 + $g3;
 			my $y1 = $y0 - $j1 + $g3;
@@ -355,7 +248,5 @@ class Simplex is export {
 			@table[$i, $r] = @table[$r, $i];
 		}
 		@table.append: @table;
-
-		return @table;
 	}
 }

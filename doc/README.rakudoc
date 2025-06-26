@@ -1,0 +1,101 @@
+=begin pod
+
+=head1 NAME
+
+Noise::Simplex – 2-D & 3-D Simplex-noise generator for Raku
+
+=head1 SYNOPSIS
+
+```raku
+use Noise::Simplex;
+
+# 2-D field
+my $s   = Simplex.new(seed => 42);
+my &n2d = $s.create-noise2d;
+say &n2d(12.3, 9.8);        # → value ≈ [-1,1]
+
+# 3-D slice (z = 0.5)
+my &n3d = $s.create-noise3d;
+say &n3d(1.0, 2.0, 0.5);
+```
+
+=head1 DESCRIPTION
+
+B<Simplex noise> (Gustavson/Perlin) is a coherent, rotation-invariant
+alternative to classic Perlin noise.  This module delivers pure-Raku
+2-D and 3-D fields seeded by a 64-bit Mersenne-Twister PRNG.
+
+=head1 CLASS
+
+=head2 C<Simplex>
+
+=over 4
+
+=item C\<new(:\$seed!)>
+
+Create a generator initialised with an integer seed.  Different seeds
+produce independent noise fields.
+
+=item C<create-noise2d> → Callable
+
+Returns a two-argument callable C\<sub (\$x, \$y --> Numeric)> that
+evaluates the 2-D field.
+
+=item C<create-noise3d> → Callable
+
+Returns a three-argument callable C\<sub (\$x, \$y, \$z --> Numeric)> that
+evaluates the 3-D field.
+
+=back
+
+=head1 RANGE
+
+Outputs are centred on zero and scaled to roughly C<\[-1,1]> using
+factors 70 (2-D) and 32 (3-D).
+
+=head1 EXAMPLE – quick greyscale PNG
+
+```raku
+#!/usr/bin/env raku
+
+use lib 'lib';
+use Noise::Simplex;
+use Image::PNG::Portable;
+
+# Set width/height for noise image.
+my $width = 512;
+my $height = 512;
+
+# Create a new Noise::Simplex with seed 12345, then return a 2D noise map.
+my $simplex = Simplex.new(seed => 12345);
+my &noise2d = $simplex.create-noise2d;
+
+# Set up a PNG image of width $width & height $height
+# Note: requires Image::PNG::Portable to be installed.
+my $img = Image::PNG::Portable.new: :$width, :$height, :alpha(False);
+
+# For each x,y value
+for 0 ..^ $height -> $y {
+    for 0 ..^ $width -> $x {
+        # Sample the noise at x/y (divide by 64 for very smooth noise).
+        my $n = noise2d($x / 64, $y / 64);
+        # Add 1 and multiply by 127.5 to get a value between 0 & 255 (RGB)
+        my $val = ($n + 1) * 127.5;
+        # Set the pixel value of the image to our value derived above.
+        $img.set: $x, $y, $val.round, $val.round, $val.round;
+    }
+}
+
+# Save the image in img/2d.png.
+$img.write: "img/2d.png";
+```
+
+=head1 AUTHOR
+
+Matt Doughty
+
+=head1 LICENSE
+
+Artistic 2.0
+
+=end pod
