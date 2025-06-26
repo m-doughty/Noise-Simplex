@@ -57,4 +57,6 @@ Creates a 3D noise map based on your seed, returns a sub that takes $x, $y, $z t
 
 ### 3D Noise
 
-![](img/3d.gif)
+![](img/3d.png)
+
+*Animated png made with [ezgif](https://ezgif.com/apng-maker).*
