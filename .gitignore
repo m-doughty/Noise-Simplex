@@ -1,0 +1,65 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Thumbnails
+._*
+
+# macOS "resource fork" files
+.Spotlight-V100
+.Trashes
+
+# Raku precompilation, REPL history
+.precomp/
+.raku-history
+.rakudo-history
+
+# Test output, coverage
+.coverage/
+*.cover
+
+# Build artifacts
+blib/
+Build/
+Makefile
+Makefile.old
+
+# Local config
+META6.json.bak
+*.bak
+
+# Module installation output
+.installed
+
+# Editor junk
+*.swp
+*~
+*.tmp
+*.sublime-workspace
+*.sublime-project
+.vscode/
+.idea/
+*.orig
+*.rej
+*.log
+
+# Zef stuff
+.zef/
+.zef-lock
+
+# Perl6/Raku temp files
+.perl6/
+.perl6-version
+
+# Other typical ignores
+node_modules/
+dist/
+tmp/
+temp/
+
+# Raku .precomp in lib and in home
+lib/.precomp/
+~/.perl6/precomp/
+
