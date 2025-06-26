@@ -53,10 +53,10 @@ Creates a 3D noise map based on your seed, returns a sub that takes $x, $y, $z t
 
 ### 2D Noise
 
-![](img/2d.png)
+![2D noise image example](img/2d.png)
 
 ### 3D Noise
 
-![](img/3d.png)
+![3D noise image example](img/3d.png)
 
 *Animated png made with [ezgif](https://ezgif.com/apng-maker).*
