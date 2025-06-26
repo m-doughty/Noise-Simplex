@@ -1,3 +1,93 @@
+=begin pod
+
+=head1 NAME
+
+Noise::Simplex – fast 2-D & 3-D Simplex-noise generator for Raku
+
+=head1 SYNOPSIS
+
+```raku
+use Noise::Simplex;
+
+# 2-D field
+my $s   = Simplex.new(seed => 42);
+my &n2d = $s.create-noise2d;
+say &n2d(12.3, 9.8);        # → value ≈ [-1,1]
+
+# 3-D slice (z = 0.5)
+my &n3d = $s.create-noise3d;
+say &n3d(1.0, 2.0, 0.5);
+```
+
+=head1 DESCRIPTION
+
+B<Simplex noise> (Gustavson/Perlin) is a coherent, rotation-invariant
+alternative to classic Perlin noise.  This module delivers pure-Raku
+2-D and 3-D fields seeded by a 64-bit Mersenne-Twister PRNG.
+
+=head1 CLASS
+
+=head2 C<Simplex>
+
+=over 4
+
+=item C\<new(:\$seed!)>
+
+Create a generator initialised with an integer seed.  Different seeds
+produce independent noise fields.
+
+=item C<create-noise2d> → Callable
+
+Returns a two-argument callable C\<sub (\$x, \$y --> Numeric)> that
+evaluates the 2-D field.
+
+=item C<create-noise3d> → Callable
+
+Returns a three-argument callable C\<sub (\$x, \$y, \$z --> Numeric)> that
+evaluates the 3-D field.
+
+=back
+
+=head1 RANGE
+
+Outputs are centred on zero and scaled to roughly C<\[-1,1]> using
+factors 70 (2-D) and 32 (3-D).
+
+=head1 EXAMPLE – quick greyscale PNG
+
+```raku
+use lib 'lib';
+use Noise::Simplex;
+use Image::PNG::Portable;
+
+my $width = 512;
+my $height = 512;
+my $simplex = Simplex.new(seed => 12345);
+my &noise2d = $simplex.create-noise2d;
+
+my $img = Image::PNG::Portable.new: :$width, :$height, :alpha(False);
+
+my @pixels;
+for 0 ..^ $height -> $y {
+    for 0 ..^ $width -> $x {
+        my $n = noise2d($x / 64, $y / 64);
+        my $val = ($n + 1) * 127.5;
+        $img.set: $x, $y, $val.round, $val.round, $val.round;  # R, G, B grayscale
+    }
+}
+
+$img.write: "img/2d.png";
+```
+
+=head1 AUTHOR
+
+Matt Doughty
+
+=head1 LICENSE
+
+Artistic 2.0
+
+=end pod
 unit module Noise::Simplex;
 
 use Math::Random::MT;
@@ -125,7 +215,7 @@ class Simplex is export {
 			my $t0 = 0.5 - $x0² - $y0²;
 
 			if $t0 >= 0 {
-				my $gi0 = @perm[($ii + @perm[$jj]) +& 255];
+				my $gi0 = $ii + @perm[$jj];
 				my ($gx, $gy) = @perm-grad2x[$gi0], @perm-grad2y[$gi0];
 				$t0 *= $t0;
 				$n0 = $t0 * $t0 * ($gx * $x0 + $gy * $y0);
@@ -211,7 +301,7 @@ class Simplex is export {
 			my $jj = $j +& 255;
 			my $kk = $k +& 255;
 
-			my $gi0 = @perm[($ii + @perm[($jj + @perm[$kk]) +& 255]) +& 255];
+			my $gi0 = $ii + @perm[$jj + @perm[$kk]];
 			my $t0 = 0.6 - $x0² - $y0² - $z0²;
 			if $t0 >= 0 {
 				my $gx = @perm-grad3x[$gi0];
@@ -221,7 +311,7 @@ class Simplex is export {
 				$n0 = $t0 * $t0 * ($gx * $x0 + $gy * $y0 + $gz * $z0);
 			}
 
-		        my $gi1 = @perm[($ii + $i1 + @perm[($jj + $j1 + @perm[($kk + $k1) +& 255]) +& 255]) +& 255];
+		        my $gi1 = $ii + $i1 + @perm[$jj + $j1 + @perm[$kk + $k1]];
 			my $t1 = 0.6 - $x1² - $y1² - $z1²;
 			if $t1 >= 0 {
 				my $gx = @perm-grad3x[$gi1];
@@ -231,7 +321,7 @@ class Simplex is export {
 				$n1 = $t1 * $t1 * ($gx * $x1 + $gy * $y1 + $gz * $z1);
 			}
 
-			my $gi2 = @perm[($ii + $i2 + @perm[($jj + $j2 + @perm[($kk + $k2) +& 255]) +& 255]) +& 255];
+			my $gi2 = $ii + $i2 + @perm[$jj + $j2 + @perm[$kk + $k2]];
 			my $t2 = 0.6 - $x2² - $y2² - $z2²;
 			if $t2 >= 0 {
 				my $gx = @perm-grad3x[$gi2];
@@ -241,7 +331,7 @@ class Simplex is export {
 				$n2 = $t2 * $t2 * ($gx * $x2 + $gy * $y2 + $gz * $z2);
 			}
 
-			my $gi3 = @perm[($ii + 1 + @perm[($jj + 1 + @perm[($kk + 1) +& 255]) +& 255]) +& 255];
+			my $gi3 = $ii + 1 + @perm[$jj + 1 + @perm[$kk + 1]];
 			my $t3 = 0.6 - $x3² - $y3² - $z3²;
 			if $t3 >= 0 {
 				my $gx = @perm-grad3x[$gi3];
